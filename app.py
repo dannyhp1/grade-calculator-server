@@ -94,6 +94,5 @@ def insert_sample_data():
     connection.commit()
     connection.close()
 
-
 if __name__ == '__main__':
     app.run(port=5000)
