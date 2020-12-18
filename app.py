@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import sqlite3
 import os
@@ -47,7 +47,14 @@ def hello():
 
 @app.route('/ping')
 def ping():
-    return 'pong'
+    return jsonify({ 'status': 'healthy', 'service': 'grade-calculator' })
+
+@app.route('/download-data', methods = ['GET'])
+def download_data():
+    try:
+        return send_file(DATABASE_FILE_NAME, attachment_filename='grade.db')
+    except Exception as e:
+        return jsonify({ 'error': e })
 
 @app.route('/load/<username>', methods = ['GET'])
 def load_grades(username):
