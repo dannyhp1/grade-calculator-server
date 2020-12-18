@@ -76,35 +76,6 @@ def load_all_grades():
 
     return jsonify(results)
 
-# Bad practice -- should make this a DELETE method.
-@app.route('/delete/all', methods = ['GET'])
-def delete_all_grades():
-    # If tables do not exist, create it now.
-    initialize_tables()
-
-    connection = sqlite3.connect(DATABASE_FILE_NAME)
-    cursor = connection.cursor()
-
-    # Get all user ids.
-    query = 'SELECT id FROM users'
-    cursor.execute(query)
-
-    results = []
-    for (id) in cursor:
-        results.append(delete_user(id[0]))
-
-    connection.close()
-
-    return jsonify(results)
-
-# Bad practice -- should make this a DELETE method.
-@app.route('/delete/<username>', methods = ['GET'])
-def delete_user_grades(username):
-    # If tables do not exist, create it now.
-    initialize_tables()
-
-    return delete_user(username)
-
 @app.route('/load/<username>', methods = ['GET'])
 def load_grades(username):
     # If tables do not exist, create it now.
@@ -237,29 +208,6 @@ def get_user(username):
     connection.close()
 
     return { 'status': 200, 'username': username, 'max_category': max_category_id, 'categories': categories }
-
-def delete_user(username):
-    connection = sqlite3.connect(DATABASE_FILE_NAME)
-    cursor = connection.cursor()
-
-    # Get user.
-    query = 'SELECT id FROM users WHERE id = ?'
-    cursor.execute(query, (username,))
-
-    fetched_username = None
-    for (id) in cursor:
-        fetched_username = id[0]
-
-    if fetched_username is None:
-        return { 'status': 404, 'message': str(username) + ' does not exist.' }
-
-    query = 'DELETE FROM users WHERE id = ?' 
-    cursor.execute(query, (fetched_username,))
-
-    connection.commit()
-    connection.close()
-    
-    return { 'status': 200, 'message': 'Successfully deleted user: ' + username }
 
 def create_table():
     print('Creating a table!')
