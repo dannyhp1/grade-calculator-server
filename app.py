@@ -56,80 +56,61 @@ def download_data():
     except Exception as e:
         return jsonify({ 'error': e })
 
-@app.route('/load/<username>', methods = ['GET'])
-def load_grades(username):
+@app.route('/load/all', methods = ['GET'])
+def load_all_grades():
     # If tables do not exist, create it now.
     initialize_tables()
 
     connection = sqlite3.connect(DATABASE_FILE_NAME)
     cursor = connection.cursor()
 
-    # Get user.
-    query = 'SELECT id FROM users WHERE id = ?'
-    cursor.execute(query, (username,))
+    # Get all user ids.
+    query = 'SELECT id FROM users'
+    cursor.execute(query)
 
-    username = None
+    results = []
     for (id) in cursor:
-        username = id[0]
+        results.append(get_user(id[0]))
 
-    # If user does not exist in database, return not found.
-    if username is None:
-        connection.close()
-
-        # Frontend incorrectly checks status in response message (rip).
-        return jsonify(
-            status=404,
-            message='The username does not exist.'
-        )
-    
-    max_category_id = 0
-    categories = []
-
-    # If the username exists, get the categories the user created.
-    query = 'SELECT MAX(id) FROM categories WHERE uid = ?'
-    cursor.execute(query, (username,))
-
-    for (results) in cursor:
-        max_category_id = int(results[0]) + 1
-
-    query = 'SELECT * FROM categories WHERE uid = ?'
-    cursor.execute(query, (username,))
-
-    results = cursor.fetchall()
-    
-    for category in results:
-        [uid, category_id, category_name, category_weight] = category
-        
-        # max_id will be the next available assignment ID. 
-        max_assignment_id = 0
-
-        query = 'SELECT MAX(id) FROM assignments WHERE uid = ? and cid = ?'
-        cursor.execute(query, (username, category_id,))
-
-        for (results) in cursor:
-            max_assignment_id = int(results[0]) + 1 if results[0] != None else 0
-        
-        assignments = [ ]
-
-        query = 'SELECT * FROM assignments WHERE uid = ? and cid = ?'
-        cursor.execute(query, (username, category_id,))
-
-        all_assignments = cursor.fetchall()
-
-        for assignment in all_assignments:
-            [uid, cid, assignment_id, assignment_name, assignment_score, assignment_max] = assignment
-            assignments.append([assignment_id, assignment_name, assignment_score, assignment_max])
-
-        categories.append([category_id, category_name, category_weight, max_assignment_id, assignments])
-
-    cursor.close()
     connection.close()
-    return jsonify(
-        status=200,
-        username=username,
-        max_category=max_category_id,
-        categories=categories
-    )
+
+    return jsonify(results)
+
+# Bad practice -- should make this a DELETE method.
+@app.route('/delete/all', methods = ['GET'])
+def delete_all_grades():
+    # If tables do not exist, create it now.
+    initialize_tables()
+
+    connection = sqlite3.connect(DATABASE_FILE_NAME)
+    cursor = connection.cursor()
+
+    # Get all user ids.
+    query = 'SELECT id FROM users'
+    cursor.execute(query)
+
+    results = []
+    for (id) in cursor:
+        results.append(delete_user(id[0]))
+
+    connection.close()
+
+    return jsonify(results)
+
+# Bad practice -- should make this a DELETE method.
+@app.route('/delete/<username>', methods = ['GET'])
+def delete_user_grades(username):
+    # If tables do not exist, create it now.
+    initialize_tables()
+
+    return delete_user(username)
+
+@app.route('/load/<username>', methods = ['GET'])
+def load_grades(username):
+    # If tables do not exist, create it now.
+    initialize_tables()
+
+    return get_user(username)
 
 @app.route('/save', methods = ['POST'])
 def save_grades():
@@ -192,6 +173,93 @@ def save_grades():
         status=200,
         message='Data was successfully stored for ' + username + '.',
     )
+
+def get_user(username):
+    connection = sqlite3.connect(DATABASE_FILE_NAME)
+    cursor = connection.cursor()
+
+    # Get user.
+    query = 'SELECT id FROM users WHERE id = ?'
+    cursor.execute(query, (username,))
+
+    username = None
+    for (id) in cursor:
+        username = id[0]
+
+    # If user does not exist in database, return not found.
+    if username is None:
+        connection.close()
+
+        # Frontend incorrectly checks status in response message (rip).
+        return { 'status': 404, 'message': 'The username does not exist.' }
+    
+    max_category_id = 0
+    categories = []
+
+    # If the username exists, get the categories the user created.
+    query = 'SELECT MAX(id) FROM categories WHERE uid = ?'
+    cursor.execute(query, (username,))
+
+    for (results) in cursor:
+        max_category_id = int(results[0]) + 1
+
+    query = 'SELECT * FROM categories WHERE uid = ?'
+    cursor.execute(query, (username,))
+
+    results = cursor.fetchall()
+    
+    for category in results:
+        [uid, category_id, category_name, category_weight] = category
+        
+        # max_id will be the next available assignment ID. 
+        max_assignment_id = 0
+
+        query = 'SELECT MAX(id) FROM assignments WHERE uid = ? and cid = ?'
+        cursor.execute(query, (username, category_id,))
+
+        for (results) in cursor:
+            max_assignment_id = int(results[0]) + 1 if results[0] != None else 0
+        
+        assignments = [ ]
+
+        query = 'SELECT * FROM assignments WHERE uid = ? and cid = ?'
+        cursor.execute(query, (username, category_id,))
+
+        all_assignments = cursor.fetchall()
+
+        for assignment in all_assignments:
+            [uid, cid, assignment_id, assignment_name, assignment_score, assignment_max] = assignment
+            assignments.append([assignment_id, assignment_name, assignment_score, assignment_max])
+
+        categories.append([category_id, category_name, category_weight, max_assignment_id, assignments])
+
+    cursor.close()
+    connection.close()
+
+    return { 'status': 200, 'username': username, 'max_category': max_category_id, 'categories': categories }
+
+def delete_user(username):
+    connection = sqlite3.connect(DATABASE_FILE_NAME)
+    cursor = connection.cursor()
+
+    # Get user.
+    query = 'SELECT id FROM users WHERE id = ?'
+    cursor.execute(query, (username,))
+
+    fetched_username = None
+    for (id) in cursor:
+        fetched_username = id[0]
+
+    if fetched_username is None:
+        return { 'status': 404, 'message': str(username) + ' does not exist.' }
+
+    query = 'DELETE FROM users WHERE id = ?' 
+    cursor.execute(query, (fetched_username,))
+
+    connection.commit()
+    connection.close()
+    
+    return { 'status': 200, 'message': 'Successfully deleted user: ' + username }
 
 def create_table():
     print('Creating a table!')
