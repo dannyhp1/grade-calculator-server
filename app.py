@@ -81,6 +81,7 @@ def load_grades(username):
     # If tables do not exist, create it now.
     initialize_tables()
 
+    print('Fetching data for ' + username)
     return get_user(username)
 
 @app.route('/save', methods = ['POST'])
@@ -115,6 +116,7 @@ def save_grades():
 
     # If the username already exists, clear all of the user's data.
     if username is not None:
+        print(username + ' already has data.')
         print('Deleting all assignments for ' + username)
         query = 'DELETE FROM assignments WHERE uid = ?'
         cursor.execute(query, (username,))
@@ -149,6 +151,7 @@ def save_grades():
     cursor.close()
     connection.close()
 
+    print('Saving data for ' + username)
     return jsonify(
         status=200,
         message='Data was successfully stored for ' + username + '.',
