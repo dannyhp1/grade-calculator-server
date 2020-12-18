@@ -51,6 +51,9 @@ def ping():
 
 @app.route('/load/<username>', methods = ['GET'])
 def load_grades(username):
+    # If tables do not exist, create it now.
+    initialize_tables()
+
     connection = sqlite3.connect(DATABASE_FILE_NAME)
     cursor = connection.cursor()
 
@@ -123,6 +126,9 @@ def load_grades(username):
 
 @app.route('/save', methods = ['POST'])
 def save_grades():
+    # If tables do not exist, create it now.
+    initialize_tables()
+
     data = request.get_json()
 
     username = data['username']
@@ -216,5 +222,4 @@ def initialize_tables():
     insert_sample_data()
 
 if __name__ == '__main__':
-    initialize_tables()
     app.run(port=5000)
