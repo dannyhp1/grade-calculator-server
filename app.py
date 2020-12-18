@@ -117,6 +117,7 @@ def save_grades():
     if username is not None:
         query = 'DELETE FROM users WHERE id = ?' 
         cursor.execute(query, (username,))
+        connection.commit()
 
     username = data['username']
 
