@@ -115,8 +115,16 @@ def save_grades():
 
     # If the username already exists, clear all of the user's data.
     if username is not None:
+        print('Deleting all assignments for ' + username)
+        query = 'DELETE FROM assignments WHERE uid = ?'
+        cursor.execute(query, (username,))
+        print('Deleting all categories for ' + username)
+        query = 'DELETE FROM categories where uid = ?'
+        cursor.execute(query, (username,))
+        print('Deleting user ' + username)
         query = 'DELETE FROM users WHERE id = ?' 
         cursor.execute(query, (username,))
+
         connection.commit()
 
     username = data['username']
