@@ -95,9 +95,7 @@ def save_grades():
     categories = data['categories']
 
     # If there are no categories, do not wipe data and ignore.
-    if len(categories) == 0:
-        connection.close()
-        
+    if len(categories) == 0:    
         return jsonify(
             status=200,
             message='No data to be stored. No action was taken.'
